@@ -1,3 +1,7 @@
+'''
+The main function in this module is parse_access_log_line().
+'''
+
 from datetime import datetime, timezone, timedelta
 from functools import lru_cache
 from logging import getLogger
@@ -89,8 +93,16 @@ def get_nginx_log_format_compiled_regexes():
     return [_re_compile(log_format_to_regex(s)) for s in nginx_log_formats]
 
 
+# code before this line prepares the regexes for log line parsing
+# -----------------------------------------------------------------------------------------------
+# code after this line does the log line parsing (executing regexes & postprocessing)
+
 
 def parse_access_log_line(line):
+    '''
+    Convert log line string into AccessLogRecord object.
+    See tests/test_log_parsing.py.
+    '''
     assert isinstance(line, str)
     regexes = get_nginx_log_format_compiled_regexes()
     for regex in regexes:
