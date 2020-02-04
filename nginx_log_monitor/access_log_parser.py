@@ -46,7 +46,7 @@ log_format_parts_to_regex = {
     '$remote_addr': rf'(?P<remote_addr>{ipv4_regex})',
     '$remote_user': r'(?P<remote_user>[^ ]+)',
     '[$time_local]': r'\[(?P<time_local>[^]]+)\]',
-    '"$request"': r'"(?P<method>[A-Z]+) (?P<path>/[^ "]+) (?P<protocol>HTTP/[0-9.]+)"',
+    '"$request"': r'"(?P<method>[A-Z]+) (?P<path>/[^ "]*) (?P<protocol>HTTP/[0-9.]+)"',
     '$status': r'(?P<status>[0-9]{3})',
     '$body_bytes_sent': r'(?P<body_bytes_sent>[0-9]+)',
     '"$http_referer"': r'"(?P<referer>[^"]+)"',
@@ -97,7 +97,7 @@ def parse_access_log_line(line):
         m = regex.match(line)
         #logger.debug('regex: %r line: %r -> %r', regex, line, m)
         if m:
-            return AccessLogRecord(m.group)
+            return AccessLogRecord(m.groupdict().get)
     raise InvalidLogLineError(f'Could not recognize log format: {line!r}')
 
 
@@ -124,10 +124,10 @@ class AccessLogRecord:
         self.protocol = get('protocol')
         self.status = int(get('status'))
         self.body_bytes_sent = int(get('body_bytes_sent'))
-        self.referer = get('referer')
+        self.referer = dash_to_none(get('referer'))
         self.user_agent_str = get('user_agent')
-        self.request_time = float(get('request_time'))
-        self.upstream_response_time = float(get('upstream_response_time'))
+        self.request_time = _float(get('request_time'))
+        self.upstream_response_time = _float(get('upstream_response_time'))
         pipe_flag = get('pipe_flag')
         if pipe_flag == 'p':
             self.pipelined = True
@@ -135,6 +135,12 @@ class AccessLogRecord:
             self.pipelined = False
         else:
             self.pipelined = None
+
+
+def _float(v):
+    if v is None:
+        return None
+    return float(v)
 
 
 def dash_to_none(s):

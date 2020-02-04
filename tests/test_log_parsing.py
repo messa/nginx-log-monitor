@@ -4,7 +4,21 @@ import pytz
 from nginx_log_monitor import parse_access_log_line
 
 
-def test_sample_nginx_access_log():
+def test_default_nginx_access_log():
+    line = '84.22.97.60 - - [04/Feb/2020:11:02:10 +0000] "GET / HTTP/1.1" 200 396 "-" "Mozilla/5.0 zgrab/0.x"'
+    rec = parse_access_log_line(line)
+    assert rec.remote_addr == '84.22.97.60'
+    assert rec.date_utc == pytz.utc.localize(datetime(2020, 2, 4, 11, 2, 10))
+    assert rec.method == 'GET'
+    assert rec.path == '/'
+    assert rec.protocol == 'HTTP/1.1'
+    assert rec.status == 200
+    assert rec.body_bytes_sent == 396
+    assert rec.referer == None
+    assert rec.user_agent_str == 'Mozilla/5.0 zgrab/0.x'
+
+
+def test_custom_nginx_access_log_20200204():
     line = (
         'foo.example.com 123.45.6.78 - - [04/Feb/2020:13:50:33 +0100] '
         '"POST /api/todo/list HTTP/2.0" 200 2702 '
