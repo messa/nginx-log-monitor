@@ -7,6 +7,7 @@ setup(
     version='0.0.1',
     description='Nginx Log Monitor',
     classifiers=[
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
