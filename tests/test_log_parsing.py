@@ -57,7 +57,7 @@ def test_default_nginx_access_log_benchmark():
     count = 1000
     t0 = monotime()
     for i in range(count):
-        line = f'84.22.97.60 - - [04/Feb/2020:11:02:10 +0000] "GET /{i} HTTP/1.1" 200 396 "-" "Mozilla/5.0 foo/{i}"'
+        line = '84.22.97.60 - - [04/Feb/2020:11:02:10 +0000] "GET /{i} HTTP/1.1" 200 396 "-" "Mozilla/5.0 foo/{i}"'.format(i=i)
         rec = parse_access_log_line(line)
     duration = monotime() - t0
     assert duration < 0.1
@@ -70,7 +70,7 @@ async def test_default_nginx_access_log_benchmark_with_asyncio_queue():
 
     async def produce():
         for i in range(count):
-            line = f'84.22.97.60 - - [04/Feb/2020:11:02:10 +0000] "GET /{i} HTTP/1.1" 200 396 "-" "Mozilla/5.0 foo/{i}"'
+            line = '84.22.97.60 - - [04/Feb/2020:11:02:10 +0000] "GET /{i} HTTP/1.1" 200 396 "-" "Mozilla/5.0 foo/{i}"'.format(i=i)
             await q.put(line)
         await q.put(None)
 

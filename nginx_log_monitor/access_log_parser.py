@@ -47,7 +47,7 @@ ipv4_regex = r'[012]?[0-9]?[0-9]\.[012]?[0-9]?[0-9]\.[012]?[0-9]?[0-9]\.[012]?[0
 log_format_parts_to_regex = {
     ' ': ' ',
     '-': '-',
-    '$remote_addr': rf'(?P<remote_addr>{ipv4_regex})',
+    '$remote_addr': r'(?P<remote_addr>{ipv4_regex})'.format(ipv4_regex=ipv4_regex),
     '$remote_user': r'(?P<remote_user>[^ ]+)',
     '[$time_local]': r'\[(?P<time_local>[^]]+)\]',
     '"$request"': r'"(?P<method>[A-Z]+) (?P<path>/[^ "]*) (?P<protocol>HTTP/[0-9.]+)"',
@@ -74,7 +74,7 @@ def log_format_to_regex(log_format):
                 full_regex += log_format_parts_to_regex[k]
                 break
         else:
-            raise InvalidLogFormatError(f'Cannot convert log format part to regex: {remaining!r}')
+            raise InvalidLogFormatError('Cannot convert log format part to regex: {!r}'.format(remaining))
     full_regex = '^' + full_regex + '$'
     #logger.debug('log_format_to_regex(%r) -> %r', log_format, full_regex)
     return full_regex
@@ -85,7 +85,7 @@ def _re_compile(regex):
     try:
         return re.compile(regex)
     except Exception as e:
-        raise InvalidLogFormatError(f'Failed to compile regular expression: {regex!r} - {e}')
+        raise InvalidLogFormatError('Failed to compile regular expression: {!r} - {}'.format(regex, e))
 
 
 @lru_cache()
@@ -110,7 +110,7 @@ def parse_access_log_line(line):
         #logger.debug('regex: %r line: %r -> %r', regex, line, m)
         if m:
             return AccessLogRecord(m.groupdict().get)
-    raise InvalidLogLineError(f'Could not recognize log format: {line!r}')
+    raise InvalidLogLineError('Could not recognize log format: {!r}'.format(line))
 
 
 class AccessLogRecord:
@@ -185,7 +185,7 @@ def parse_date(date_str):
             int(y), month_name_to_number[m], int(d),
             int(H), int(M), int(S),
             tzinfo=timezone(tz_offset))
-    raise InvalidLogLineError(f'Unknown date format: {date_str!r}')
+    raise InvalidLogLineError('Unknown date format: {!r}'.format(date_str))
 
 
 def date_to_utc(dt):

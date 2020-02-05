@@ -1,4 +1,3 @@
-from asyncio import get_running_loop
 from logging import getLogger
 from glob import glob
 from pathlib import Path
@@ -16,11 +15,7 @@ class Configuration:
         self.overwatch = Overwatch(cfg.get('overwatch') or {})
         self.sentry = Sentry(cfg.get('sentry') or {})
 
-    async def get_access_log_paths(self):
-        loop = get_running_loop()
-        await loop.run_in_executor(None, self.get_access_log_paths_sync())
-
-    def get_access_log_paths_sync(self):
+    def get_access_log_paths(self):
         if not self.access_log_paths:
             return Path('/var/log/nginx/access.log')
         paths = []

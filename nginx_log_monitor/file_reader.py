@@ -1,6 +1,6 @@
-from asyncio import Queue, get_running_loop, sleep
+from asyncio import Queue, sleep
 from collections import namedtuple
-from contextlib import AsyncExitStack
+from contextlib import ExitStack
 from inspect import iscoroutinefunction
 from logging import getLogger
 from os import stat, SEEK_END
@@ -18,8 +18,8 @@ async def tail_files(queue, get_paths, sleep_interval=1):
     assert isinstance(queue, Queue)
     assert iscoroutinefunction(get_paths)
     open_files = {} # path -> FileReader
-    async with AsyncExitStack() as stack:
-        paths = await get_paths()
+    with ExitStack() as stack:
+        paths = get_paths()
         for p in paths:
             open_files[p] = stack.enter_context(FileReader(p))
         while True:
