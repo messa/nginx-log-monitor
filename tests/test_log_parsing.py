@@ -1,5 +1,8 @@
+from asyncio import Queue, gather
 from datetime import datetime
+from pytest import mark
 import pytz
+from time import monotonic as monotime
 
 from nginx_log_monitor import parse_access_log_line
 
@@ -49,3 +52,36 @@ def test_custom_nginx_access_log_20200204():
     assert rec.upstream_response_time == 0.206
     assert rec.pipelined == False
 
+
+def test_default_nginx_access_log_benchmark():
+    count = 1000
+    t0 = monotime()
+    for i in range(count):
+        line = f'84.22.97.60 - - [04/Feb/2020:11:02:10 +0000] "GET /{i} HTTP/1.1" 200 396 "-" "Mozilla/5.0 foo/{i}"'
+        rec = parse_access_log_line(line)
+    duration = monotime() - t0
+    assert duration < 0.1
+
+
+@mark.asyncio
+async def test_default_nginx_access_log_benchmark_with_asyncio_queue():
+    count = 1000
+    q = Queue()
+
+    async def produce():
+        for i in range(count):
+            line = f'84.22.97.60 - - [04/Feb/2020:11:02:10 +0000] "GET /{i} HTTP/1.1" 200 396 "-" "Mozilla/5.0 foo/{i}"'
+            await q.put(line)
+        await q.put(None)
+
+    async def consume():
+        for i in range(count):
+            line = await q.get()
+            parse_access_log_line(line)
+        last = await q.get()
+        assert last is None
+
+    t0 = monotime()
+    await gather(produce(), consume())
+    duration = monotime() - t0
+    assert duration < 0.1
