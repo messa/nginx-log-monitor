@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from asyncio import run, Queue, create_task, wait, FIRST_COMPLETED, CancelledError
+from asyncio import Queue, wait, FIRST_COMPLETED, CancelledError
 from logging import getLogger
 import os
 from pathlib import Path
@@ -8,6 +8,7 @@ import yaml
 from .configuration import Configuration
 from .file_reader import tail_files
 from .access_log_processing import process_access_log_queue
+from .util import asyncio_run, create_task
 
 
 logger = getLogger(__name__)
@@ -22,7 +23,7 @@ def nginx_log_monitor_main():
     cfg_path = args.conf or os.environ.get('CONF_FILE')
     cfg = yaml.safe_load(Path(cfg_path).read_text()) if cfg_path else {}
     conf = Configuration(cfg)
-    run(async_main(conf))
+    asyncio_run(async_main(conf))
 
 
 log_format = '%(asctime)s %(name)-25s %(levelname)5s: %(message)s'
