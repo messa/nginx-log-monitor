@@ -1,5 +1,6 @@
 from asyncio import Queue, get_running_loop, sleep
 from collections import namedtuple
+from contextlib import AsyncExitStack
 from inspect import iscoroutinefunction
 from logging import getLogger
 from os import stat, SEEK_END
@@ -17,14 +18,26 @@ async def tail_files(queue, get_paths, sleep_interval=1):
     assert isinstance(queue, Queue)
     assert iscoroutinefunction(get_paths)
     open_files = {} # path -> FileReader
-    paths = await get_paths()
-    for p in paths:
-        open_files[p] = FileReader(p)
-    while True:
-        for p, fr in open_files.items():
-            for line in fr.read_lines():
-                await queue.put(LogLine(file=p, line=line))
-        await sleep(sleep_interval)
+    async with AsyncExitStack() as stack:
+        paths = await get_paths()
+        for p in paths:
+            open_files[p] = stack.enter_context(FileReader(p))
+        while True:
+            for p, fr in open_files.items():
+                for line in fr.read_lines():
+                    await queue.put(LogLine(file=p, line=line))
+            await sleep(sleep_interval)
+
+
+def _close_file(f):
+    '''
+    Called from FileReader.__exit__()
+    '''
+    try:
+        f.close()
+    except Exception as e:
+        logger.exception('Failed to close file %r: %r', f, e)
+
 
 
 class FileReader:
@@ -36,6 +49,17 @@ class FileReader:
         self._current_file = None
         self._current_dev_inode = None
         self._rotated_files = [] # [( file, expire_monotime )]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._current_file:
+            _close_file(self._current_file)
+        self._current_file = None
+        for f, expire_mt in self._rotated_files:
+            _close_file(f.close())
+        self._rotated_files = None
 
     def read_lines(self):
         # check if current file is rotated
