@@ -29,12 +29,15 @@ class Overwatch:
     def __init__(self, cfg):
         self.report_url = None
         self.report_token = None
+        self.enabled = False
         if cfg.get('report_url') and cfg.get('report_token'):
             self.report_url = cfg['report_url']
             self.report_token = cfg['report_token']
+            self.enabled = cfg.get('enabled', True)
 
 
 class Sentry:
 
     def __init__(self, cfg):
         self.dsn = cfg.get('dsn')
+        self.enabled = self.dsn and cfg.get('enabled', True)

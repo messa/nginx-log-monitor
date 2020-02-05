@@ -1,0 +1,2 @@
+class StatusStats:
+    pass

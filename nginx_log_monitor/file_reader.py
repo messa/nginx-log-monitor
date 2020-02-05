@@ -14,9 +14,9 @@ logger = getLogger(__name__)
 LogLine = namedtuple('LogLine', 'file line')
 
 
-async def tail_files(queue, get_paths, sleep_interval=1):
-    assert isinstance(queue, Queue)
-    assert iscoroutinefunction(get_paths)
+async def tail_files(get_paths, process_line, sleep_interval=1):
+    assert callable(get_paths)
+    assert iscoroutinefunction(process_line)
     open_files = {} # path -> FileReader
     with ExitStack() as stack:
         paths = get_paths()
@@ -25,7 +25,7 @@ async def tail_files(queue, get_paths, sleep_interval=1):
         while True:
             for p, fr in open_files.items():
                 for line in fr.read_lines():
-                    await queue.put(LogLine(file=p, line=line))
+                    await process_line(p, line)
             await sleep(sleep_interval)
 
 

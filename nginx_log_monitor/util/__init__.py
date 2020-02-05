@@ -1,3 +1,5 @@
+from .asyncio import PubSub
+
 try:
     from asyncio import run as asyncio_run
 except ImportError:
