@@ -1,10 +1,11 @@
 from argparse import ArgumentParser
-from asyncio import run, Queue
+from asyncio import run, Queue, create_task, wait, FIRST_COMPLETED, CancelledError
 import os
 from pathlib import Path
 import yaml
 
 from .configuration import Configuration
+from .file_reader import tail_files
 
 
 def nginx_log_monitor_main():
@@ -29,7 +30,35 @@ def setup_logging(verbose):
         level=DEBUG if verbose else WARNING)
 
 
-
 async def async_main(conf):
     access_log_queue = Queue(1000)
-    watch_
+    tasks = []
+    run_task = lambda tf: tasks.append(create_task(tf))
+    try:
+        run_task(tail_files(access_log_queue, conf.get_access_log_paths))
+        run_task(process_access_log_queue(conf, access_log_queue))
+        await wait(tasks, return_when=FIRST_COMPLETED)
+    finally:
+        await stop_tasks(tasks)
+
+
+async def stop_tasks(tasks):
+    for t in tasks:
+        cancel_task(t)
+    for t in tasks:
+        await get_task_result(t)
+
+
+def cancel_task(t):
+    if not t.done():
+        logger.debug('Cancelling task %s', t)
+        t.cancel()
+
+
+async def get_task_result(t):
+    try:
+        await t
+    except CancelledError as e:
+        logger.debug('Task %r cancelled', t)
+    except Exception as e:
+        logger.debug('Task %r: %r', t, e)
