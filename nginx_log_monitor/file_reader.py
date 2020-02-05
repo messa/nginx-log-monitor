@@ -39,7 +39,6 @@ def _close_file(f):
         logger.exception('Failed to close file %r: %r', f, e)
 
 
-
 class FileReader:
 
     expire_interval_s = 60

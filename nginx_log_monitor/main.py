@@ -1,11 +1,16 @@
 from argparse import ArgumentParser
 from asyncio import run, Queue, create_task, wait, FIRST_COMPLETED, CancelledError
+from logging import getLogger
 import os
 from pathlib import Path
 import yaml
 
 from .configuration import Configuration
 from .file_reader import tail_files
+from .access_log_processing import process_access_log_queue
+
+
+logger = getLogger(__name__)
 
 
 def nginx_log_monitor_main():

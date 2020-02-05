@@ -7,5 +7,6 @@ logger = getLogger(__name__)
 
 async def process_access_log_queue(conf, queue):
     assert isinstance(queue, Queue)
+    raise Exception('NIY')
 
 
