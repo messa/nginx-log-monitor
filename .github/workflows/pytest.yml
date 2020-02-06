@@ -31,3 +31,5 @@ jobs:
       run: pip install pytest pytest-asyncio
     - name: Test with pytest
       run: pytest -v tests
+    - name: Run nginx-log-monitor --help
+      run: nginx-log-monitor --help
