@@ -10,7 +10,7 @@ from .clients.overwatch_client import OverwatchClientNotConfiguredError, Overwat
 
 logger = getLogger(__name__)
 
-sleep_interval_s = 30
+sleep_interval_s = 15
 
 
 async def report_to_overwatch(conf, status_stats, path_stats, overwatch_client):
@@ -26,7 +26,7 @@ async def report_to_overwatch(conf, status_stats, path_stats, overwatch_client):
 
 
 def generate_report(status_stats, path_stats):
-    watchdog_interval_s = sleep_interval_s * 3
+    watchdog_interval_s = sleep_interval_s * 2 + 60
     report = {
         'date': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
         'label': {

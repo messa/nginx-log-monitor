@@ -149,7 +149,7 @@ class AccessLogRecord:
             self.pipelined = None
 
     def __repr__(self):
-        return '<{cls} method={s.method!r} path={s.path!r} status={s.status!r}>'.format(cls=self.__name__.__class__, s=self)
+        return '<{cls} method={s.method!r} path={s.path!r} status={s.status!r}>'.format(cls=self.__class__.__name__, s=self)
 
 
 def _int(v):
