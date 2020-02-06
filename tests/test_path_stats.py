@@ -8,12 +8,12 @@ from nginx_log_monitor.path_stats import cleanup_counter, unify_path
 def test_cleanup_counter():
     c = Counter('lorem ipsum dolor sit amet.')
     assert len(c) == 14
-    assert c.most_common(5) == [(' ', 4), ('o', 3), ('m', 3), ('l', 2), ('r', 2)]
+    assert set(c.most_common(3)) == {(' ', 4), ('o', 3), ('m', 3)}
     assert set(c.items()) == set(c.most_common(100))
     assert cleanup_counter(c, 100) == c
-    c2 = cleanup_counter(c, 5)
-    assert len(c2) == 5
-    assert set(c2.items()) == set(c.most_common(5))
+    c2 = cleanup_counter(c, 3)
+    assert len(c2) == 3
+    assert set(c2.items()) == set(c.most_common(3))
 
 def test_unify_path():
     assert unify_path('/') == '/'
