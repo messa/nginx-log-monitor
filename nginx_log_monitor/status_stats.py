@@ -11,7 +11,7 @@ class StatusStats:
         self.status_count = Counter()
 
     def update(self, access_log_record):
-        status = int(access_log_record.status)
+        status = str(access_log_record.status)
         self.status_count[status] += 1
 
     def get_report(self):

@@ -12,8 +12,8 @@ def test_status_stats():
     s.update(mk_rec({'path': '/bar/89', 'status': 500}))
     assert s.get_report() == {
         'status_count': {
-            200: 3,
-            404: 1,
-            500: 1,
+            '200': 3,
+            '404': 1,
+            '500': 1,
         },
     }

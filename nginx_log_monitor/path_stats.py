@@ -12,7 +12,7 @@ class PathStats:
         self.path_status_count = defaultdict(Counter)
 
     def update(self, access_log_record):
-        status = int(access_log_record.status)
+        status = str(access_log_record.status)
         unified_path = unify_path(access_log_record.path)
         self.path_status_count[status][unified_path] += 1
         self.path_status_count[status] = cleanup_counter(self.path_status_count[status], 10000)

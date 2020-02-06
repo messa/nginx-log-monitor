@@ -13,12 +13,12 @@ def test_path_stats():
     s.update(mk_rec({'path': '/bar/89', 'status': 500}))
     assert s.get_report() == {
         'path_status_count': {
-            200: {
+            '200': {
                 '/bar/<n>': 2,
                 '/foo': 1
             },
-            404: {'/foo': 1},
-            500: {'/bar/<n>': 1}
+            '404': {'/foo': 1},
+            '500': {'/bar/<n>': 1},
         },
     }
 
@@ -32,6 +32,7 @@ def test_cleanup_counter():
     c2 = cleanup_counter(c, 3)
     assert len(c2) == 3
     assert set(c2.items()) == set(c.most_common(3))
+
 
 def test_unify_path():
     assert unify_path('/') == '/'
