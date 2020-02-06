@@ -1,8 +1,26 @@
 from collections import Counter
-from nginx_log_monitor.path_stats import cleanup_counter, unify_path
+from nginx_log_monitor.access_log_parser import AccessLogRecord
+from nginx_log_monitor.path_stats import PathStats, cleanup_counter, unify_path
 
 
-
+def test_path_stats():
+    s = PathStats()
+    mk_rec = lambda data: AccessLogRecord(data.get)
+    s.update(mk_rec({'path': '/foo', 'status': 200}))
+    s.update(mk_rec({'path': '/foo', 'status': 404}))
+    s.update(mk_rec({'path': '/bar/1234', 'status': 200}))
+    s.update(mk_rec({'path': '/bar/567', 'status': 200}))
+    s.update(mk_rec({'path': '/bar/89', 'status': 500}))
+    assert s.get_report() == {
+        'path_status_count': {
+            200: {
+                '/bar/<n>': 2,
+                '/foo': 1
+            },
+            404: {'/foo': 1},
+            500: {'/bar/<n>': 1}
+        },
+    }
 
 
 def test_cleanup_counter():

@@ -9,7 +9,7 @@ logger = getLogger(__name__)
 class PathStats:
 
     def __init__(self):
-        self.path_status_count = defaultdict(Counter())
+        self.path_status_count = defaultdict(Counter)
 
     def update(self, access_log_record):
         status = int(access_log_record.status)

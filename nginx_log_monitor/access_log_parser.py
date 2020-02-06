@@ -134,8 +134,8 @@ class AccessLogRecord:
         self.method = get('method')
         self.path = get('path')
         self.protocol = get('protocol')
-        self.status = int(get('status'))
-        self.body_bytes_sent = int(get('body_bytes_sent'))
+        self.status = _int(get('status'))
+        self.body_bytes_sent = _int(get('body_bytes_sent'))
         self.referer = dash_to_none(get('referer'))
         self.user_agent_str = get('user_agent')
         self.request_time = _float(get('request_time'))
@@ -151,6 +151,11 @@ class AccessLogRecord:
     def __repr__(self):
         return '<{cls} method={s.method!r} path={s.path!r} status={s.status!r}>'.format(cls=self.__name__.__class__, s=self)
 
+
+def _int(v):
+    if v is None:
+        return None
+    return int(v)
 
 def _float(v):
     if v is None:
