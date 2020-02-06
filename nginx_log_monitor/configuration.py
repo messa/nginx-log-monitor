@@ -17,10 +17,10 @@ class Configuration:
 
     def get_access_log_paths(self):
         if not self.access_log_paths:
-            return Path('/var/log/nginx/access.log')
+            return [Path('/var/log/nginx/access.log')]
         paths = []
         for x in self.access_log_paths:
-            paths.extend(glob(str(x)))
+            paths.extend(Path(p) for p in glob(str(x)))
         return paths
 
 

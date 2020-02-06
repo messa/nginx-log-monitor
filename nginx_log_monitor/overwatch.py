@@ -1,5 +1,4 @@
 from asyncio import sleep
-from aiohttp import ClientSession
 from datetime import datetime
 from logging import getLogger
 from os import getpid
@@ -15,16 +14,15 @@ sleep_interval_s = 30
 
 
 async def report_to_overwatch(conf, status_stats, path_stats, overwatch_client):
-    async with ClientSession() as session:
-        while True:
-            await sleep(sleep_interval_s)
-            report = generate_report(status_stats, path_stats)
-            try:
-                await overwatch_client.send_report(report)
-            except OverwatchClientNotConfiguredError:
-                logger.info('Overwatch not configured')
-            except OverwatchClientReportError as e:
-                logger.warning('Overwatch report failed: %r', e)
+    while True:
+        await sleep(sleep_interval_s)
+        report = generate_report(status_stats, path_stats)
+        try:
+            await overwatch_client.send_report(report)
+        except OverwatchClientNotConfiguredError:
+            logger.info('Overwatch not configured')
+        except OverwatchClientReportError as e:
+            logger.warning('Overwatch report failed: %r', e)
 
 
 def generate_report(status_stats, path_stats):

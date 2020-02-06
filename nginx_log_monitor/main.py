@@ -1,6 +1,5 @@
 from argparse import ArgumentParser
 from asyncio import Queue, wait, FIRST_COMPLETED, CancelledError
-from functools import partial
 from logging import getLogger
 import os
 from pathlib import Path
@@ -53,8 +52,12 @@ async def async_main(conf, overwatch_client=None, sentry_client=None):
 
     tasks = []
     run_task = lambda tf: tasks.append(create_task(tf))
+
+    async def _process_log_line(path, line):
+        await process_log_line(access_log_pubsub, path, line)
+
     try:
-        run_task(tail_files(conf.get_access_log_paths, partial(process_log_line, access_log_pubsub)))
+        run_task(tail_files(conf.get_access_log_paths, _process_log_line))
         status_stats = StatusStats()
         path_stats = PathStats()
         run_task(update_stats(access_log_pubsub.subscribe(), status_stats))
@@ -73,7 +76,11 @@ async def async_main(conf, overwatch_client=None, sentry_client=None):
                 conf,
                 access_log_pubsub.subscribe(),
                 sentry_client=sentry_client or SentryClient()))
-        await wait(tasks, return_when=FIRST_COMPLETED)
+        done, pending = await wait(tasks, return_when=FIRST_COMPLETED)
+        for t in done:
+            logger.warning('Task has finished unexpectedly: %r (%s)', t.exception() or t.get_task_result(), t)
+    except Exception as e:
+        logger.exception('async_main failed: %r', e)
     finally:
         await stop_tasks(tasks)
 

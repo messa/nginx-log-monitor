@@ -15,16 +15,24 @@ LogLine = namedtuple('LogLine', 'file line')
 
 
 async def tail_files(get_paths, process_line, sleep_interval=1):
-    assert callable(get_paths)
-    assert iscoroutinefunction(process_line)
+    assert callable(get_paths), 'get_paths must be function'
+    assert iscoroutinefunction(process_line), 'process_line must be coroutine function'
     open_files = {} # path -> FileReader
     with ExitStack() as stack:
         paths = get_paths()
+        logger.debug('Paths: %r', paths)
         for p in paths:
-            open_files[p] = stack.enter_context(FileReader(p))
+            logger.debug('Opening %s', p)
+            try:
+                open_files[p] = stack.enter_context(FileReader(p))
+            except Exception as e:
+                logger.warning('Failed to open file %s: %r', p, e)
+        if not open_files:
+            raise Exception('No file opened')
         while True:
             for p, fr in open_files.items():
                 for line in fr.read_lines():
+                    logger.debug('Line: %r', line)
                     await process_line(p, line)
             await sleep(sleep_interval)
 
