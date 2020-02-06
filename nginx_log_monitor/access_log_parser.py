@@ -148,6 +148,9 @@ class AccessLogRecord:
         else:
             self.pipelined = None
 
+    def __repr__(self):
+        return '<{cls} method={s.method!r} path={s.path!r} status={s.status!r}>'.format(cls=self.__name__.__class__, s=self)
+
 
 def _float(v):
     if v is None:
@@ -166,7 +169,6 @@ re_time_local = re.compile(
     # example: '04/Feb/2020:13:14:33 +0100'
     r'^([0123][0-9])/([A-Z][a-z][a-z])/([12][0-9]{3})'
     r':([012][0-9]):([0-5][0-9]):([0-6][0-9]) ([+-])([0-9]{2})([0-9]{2})$')
-
 
 
 month_names = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split()

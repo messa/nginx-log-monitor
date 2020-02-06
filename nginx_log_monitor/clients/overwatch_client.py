@@ -16,7 +16,7 @@ class OverwatchClientReportError (Exception):
 
 class OverwatchClient:
 
-    def __init__(self, session, report_url, report_token):
+    def __init__(self, report_url, report_token):
         self._session = None
         self._report_url = report_url
         self._report_token = report_token
@@ -31,7 +31,7 @@ class OverwatchClient:
 
     async def __aexit__(self, *args):
         aexit = type(self._session_manager).__aexit__
-        await aexit(manager, *args)
+        await aexit(self._session_manager, *args)
         self._session = None
         self._session_manager = None
 

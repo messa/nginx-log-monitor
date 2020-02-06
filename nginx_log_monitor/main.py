@@ -1,14 +1,16 @@
 from argparse import ArgumentParser
 from asyncio import Queue, wait, FIRST_COMPLETED, CancelledError
+from functools import partial
 from logging import getLogger
 import os
 from pathlib import Path
 import yaml
 
+from .clients import OverwatchClient, SentryClient
 from .configuration import Configuration
 from .file_reader import tail_files
 from .access_log_parser import parse_access_log_line
-from .util import asyncio_run, create_task
+from .util import asyncio_run, create_task, PubSub
 from .status_stats import StatusStats
 from .path_stats import PathStats
 from .overwatch import report_to_overwatch
@@ -43,7 +45,7 @@ def setup_logging(verbose):
         level=DEBUG if verbose else WARNING)
 
 
-async def async_main(conf):
+async def async_main(conf, overwatch_client=None, sentry_client=None):
     '''
     This is where all the stuff is happening :)
     '''
@@ -58,9 +60,19 @@ async def async_main(conf):
         run_task(update_stats(access_log_pubsub.subscribe(), status_stats))
         run_task(update_stats(access_log_pubsub.subscribe(), path_stats))
         if conf.overwatch.enabled:
-            run_task(report_to_overwatch(conf, status_stats, path_stats))
+            if overwatch_client:
+                run_task(report_to_overwatch(conf, status_stats, path_stats, overwatch_client=overwatch_client))
+            else:
+                owc_kwargs = dict(
+                    report_url=conf.overwatch.report_url,
+                    report_token=conf.overwatch.report_token)
+                async with OverwatchClient(**owc_kwargs) as overwatch_client:
+                    run_task(report_to_overwatch(conf, status_stats, path_stats, overwatch_client=overwatch_client))
         if conf.sentry.enabled:
-            run_task(report_to_sentry(conf, access_log_pubsub.subscribe()))
+            run_task(report_to_sentry(
+                conf,
+                access_log_pubsub.subscribe(),
+                sentry_client=sentry_client or SentryClient()))
         await wait(tasks, return_when=FIRST_COMPLETED)
     finally:
         await stop_tasks(tasks)
@@ -76,7 +88,7 @@ async def process_log_line(access_log_pubsub, path, line):
 async def update_stats(access_log_queue, stats_obj):
     while True:
         access_log_record = await access_log_queue.get()
-        stats.update(access_log_record)
+        stats_obj.update(access_log_record)
 
 
 async def stop_tasks(tasks):
