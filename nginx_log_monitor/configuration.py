@@ -26,6 +26,8 @@ class Configuration:
 
 class Overwatch:
 
+    default_report_interval_s = 30
+
     def __init__(self, cfg):
         self.report_url = None
         self.report_token = None
@@ -34,10 +36,11 @@ class Overwatch:
             self.report_url = cfg['report_url']
             self.report_token = cfg['report_token']
             self.enabled = cfg.get('enabled', True)
+        self.report_interval_s = float(cfg.get('report_interval_s') or self.default_report_interval_s)
 
 
 class Sentry:
 
     def __init__(self, cfg):
         self.dsn = cfg.get('dsn')
-        self.enabled = self.dsn and cfg.get('enabled', True)
+        self.enabled = bool(self.dsn) and cfg.get('enabled', True)

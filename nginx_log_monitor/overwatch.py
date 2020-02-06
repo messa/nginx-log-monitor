@@ -1,6 +1,7 @@
 from asyncio import sleep
 from datetime import datetime
 from logging import getLogger
+import os
 from os import getpid
 from socket import getfqdn
 from time import time
@@ -10,12 +11,10 @@ from .clients.overwatch_client import OverwatchClientNotConfiguredError, Overwat
 
 logger = getLogger(__name__)
 
-sleep_interval_s = 15
-
 
 async def report_to_overwatch(conf, status_stats, path_stats, overwatch_client):
     while True:
-        await sleep(sleep_interval_s)
+        await sleep(conf.overwatch.report_interval_s)
         report = generate_report(status_stats, path_stats)
         try:
             await overwatch_client.send_report(report)
@@ -31,7 +30,7 @@ def generate_report(status_stats, path_stats):
         'date': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
         'label': {
             'agent': 'nginx_log_monitor',
-            'host': getfqdn(),
+            'host': os.environ.get('LABEL_HOST') or getfqdn(),
         },
         'state': {
             'pid': getpid(),
