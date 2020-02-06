@@ -13,13 +13,40 @@ def test_path_stats():
     s.update(mk_rec({'path': '/bar/89', 'status': 500}))
     assert s.get_report() == {
         'path_status_count': {
-            '200': {
-                '/bar/<n>': 2,
-                '/foo': 1
+            'total': {
+                '200': {
+                    '/bar/<n>': 2,
+                    '/foo': 1,
+                },
+                '404': {'/foo': 1},
+                '500': {'/bar/<n>': 1},
             },
-            '404': {'/foo': 1},
-            '500': {'/bar/<n>': 1},
+            'last_5_min': {
+                '200': {
+                    '/bar/<n>': 2,
+                    '/foo': 1,
+                },
+                '404': {'/foo': 1},
+                '500': {'/bar/<n>': 1},
+            },
         },
+    }
+
+
+def test_path_stats_rolling():
+    s = PathStats()
+    mk_rec = lambda data: AccessLogRecord(data.get)
+    s.update(mk_rec({'path': '/foo', 'status': 200}), now=10)
+    s.update(mk_rec({'path': '/foo', 'status': 200}), now=20)
+    assert s.get_report(now=315) == {
+        'path_status_count': {
+            'total': {
+                '200': {'/foo': 2},
+            },
+            'last_5_min': {
+                '200': {'/foo': 1},
+            }
+        }
     }
 
 

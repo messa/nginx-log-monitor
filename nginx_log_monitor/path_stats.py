@@ -1,6 +1,8 @@
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from logging import getLogger
 import re
+from sys import intern
+from time import monotonic as monotime
 
 
 logger = getLogger(__name__)
@@ -9,22 +11,55 @@ logger = getLogger(__name__)
 class PathStats:
 
     def __init__(self):
-        self.path_status_count = defaultdict(Counter)
+        self.total_path_status_count = defaultdict(Counter)
+        self.rolling_5min_path_status_count = defaultdict(Counter)
+        self.rolling_5min_deque = deque()
 
-    def update(self, access_log_record):
-        status = str(access_log_record.status)
+    def update(self, access_log_record, now=None):
+        status = intern(str(access_log_record.status))
         unified_path = unify_path(access_log_record.path)
-        self.path_status_count[status][unified_path] += 1
-        self.path_status_count[status] = cleanup_counter(self.path_status_count[status], 10000)
+        now = monotime() if now is None else now
+        self.total_path_status_count[status][unified_path] += 1
+        self.rolling_5min_path_status_count[status][unified_path] += 1
+        self.rolling_5min_deque.append((now, status, unified_path))
+        self._roll(now)
+        self._compact(status=status)
 
-    def get_report(self):
+    def _roll(self, now):
+        while self.rolling_5min_deque:
+            t, status, unified_path = self.rolling_5min_deque[0]
+            if t >= now - 300:
+                break
+            if self.rolling_5min_path_status_count[status][unified_path] > 0:
+                self.rolling_5min_path_status_count[status][unified_path] -= 1
+            self.rolling_5min_deque.popleft()
+
+    def _compact(self, status):
+        self.total_path_status_count[status] = cleanup_counter(self.total_path_status_count[status], 10000)
+        self.rolling_5min_path_status_count[status] = cleanup_counter(self.rolling_5min_path_status_count[status], 10000)
+
+    def get_report(self, now=None):
+        now = monotime() if now is None else now
+        self._roll(now)
         report = {
-            'path_status_count': {},
+            'path_status_count': {
+                'total': {},
+                'last_5_min': {},
+            },
         }
-        for status, path_count in sorted(self.path_status_count.items()):
-            report['path_status_count'].setdefault(status, {})
+
+        for status, path_count in sorted(self.total_path_status_count.items()):
+            assert status not in report['path_status_count']['total']
+            report['path_status_count']['total'][status] = {}
             for path, count in path_count.most_common(5):
-                report['path_status_count'][status][path] = count
+                report['path_status_count']['total'][status][path] = count
+
+        for status, path_count in sorted(self.rolling_5min_path_status_count.items()):
+            assert status not in report['path_status_count']['last_5_min']
+            report['path_status_count']['last_5_min'][status] = {}
+            for path, count in path_count.most_common(5):
+                report['path_status_count']['last_5_min'][status][path] = count
+
         return report
 
 
