@@ -13,6 +13,3 @@ COPY nginx_log_monitor /src/nginx_log_monitor
 RUN pip install /src/
 
 ENTRYPOINT ["nginx-log-monitor"]
-
-
-
