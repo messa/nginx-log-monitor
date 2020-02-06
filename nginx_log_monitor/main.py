@@ -1,3 +1,4 @@
+from aiohttp import ClientSession
 from argparse import ArgumentParser
 from asyncio import Queue, wait, FIRST_COMPLETED, CancelledError
 from logging import getLogger
@@ -50,39 +51,38 @@ async def async_main(conf, overwatch_client=None, sentry_client=None):
     '''
     access_log_pubsub = PubSub(1000)
 
-    tasks = []
-    run_task = lambda tf: tasks.append(create_task(tf))
-
     async def _process_log_line(path, line):
         await process_log_line(access_log_pubsub, path, line)
 
-    try:
-        run_task(tail_files(conf.get_access_log_paths, _process_log_line))
-        status_stats = StatusStats()
-        path_stats = PathStats()
-        run_task(update_stats(access_log_pubsub.subscribe(), status_stats))
-        run_task(update_stats(access_log_pubsub.subscribe(), path_stats))
-        if conf.overwatch.enabled:
-            if overwatch_client:
+    tasks = []
+    run_task = lambda tf: tasks.append(create_task(tf))
+
+    async with ClientSession() as session:
+        try:
+            run_task(tail_files(conf.get_access_log_paths, _process_log_line))
+            status_stats = StatusStats()
+            path_stats = PathStats()
+            run_task(update_stats(access_log_pubsub.subscribe(), status_stats))
+            run_task(update_stats(access_log_pubsub.subscribe(), path_stats))
+            if conf.overwatch.enabled:
+                if not overwatch_client:
+                    overwatch_client = OverwatchClient(
+                        session,
+                        report_url=conf.overwatch.report_url,
+                        report_token=conf.overwatch.report_token)
                 run_task(report_to_overwatch(conf, status_stats, path_stats, overwatch_client=overwatch_client))
-            else:
-                owc_kwargs = dict(
-                    report_url=conf.overwatch.report_url,
-                    report_token=conf.overwatch.report_token)
-                async with OverwatchClient(**owc_kwargs) as overwatch_client:
-                    run_task(report_to_overwatch(conf, status_stats, path_stats, overwatch_client=overwatch_client))
-        if conf.sentry.enabled:
-            run_task(report_to_sentry(
-                conf,
-                access_log_pubsub.subscribe(),
-                sentry_client=sentry_client or SentryClient()))
-        done, pending = await wait(tasks, return_when=FIRST_COMPLETED)
-        for t in done:
-            logger.warning('Task has finished unexpectedly: %r (%s)', t.exception() or t.get_task_result(), t)
-    except Exception as e:
-        logger.exception('async_main failed: %r', e)
-    finally:
-        await stop_tasks(tasks)
+            if conf.sentry.enabled:
+                run_task(report_to_sentry(
+                    conf,
+                    access_log_pubsub.subscribe(),
+                    sentry_client=sentry_client or SentryClient()))
+            done, pending = await wait(tasks, return_when=FIRST_COMPLETED)
+            for t in done:
+                logger.warning('Task has finished unexpectedly: %r (%s)', t.exception() or t.get_task_result(), t)
+        except Exception as e:
+            logger.exception('async_main failed: %r', e)
+        finally:
+            await stop_tasks(tasks)
 
 
 async def process_log_line(access_log_pubsub, path, line):

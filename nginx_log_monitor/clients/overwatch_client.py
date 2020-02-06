@@ -16,24 +16,10 @@ class OverwatchClientReportError (Exception):
 
 class OverwatchClient:
 
-    def __init__(self, report_url, report_token):
-        self._session = None
+    def __init__(self, client_session, report_url, report_token):
+        self._session = client_session
         self._report_url = report_url
         self._report_token = report_token
-
-    async def __aenter__(self):
-        assert self._session is None
-        # https://docs.python.org/3/reference/compound_stmts.html#the-async-with-statement
-        self._session_manager = ClientSession()
-        aenter = type(self._session_manager).__aenter__
-        self._session = await aenter(self._session_manager)
-        return self
-
-    async def __aexit__(self, *args):
-        aexit = type(self._session_manager).__aexit__
-        await aexit(self._session_manager, *args)
-        self._session = None
-        self._session_manager = None
 
     async def send_report(self, report_data):
         assert isinstance(report_data, dict)
