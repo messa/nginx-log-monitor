@@ -11,4 +11,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag nginx-log-monitor:$(date +%s)
+      run: docker build . --file Dockerfile --tag nginx-log-monitor:latest
+    - name: Try to run --help
+      run: docker run --rm -i nginx-log-monitor:latest --help
