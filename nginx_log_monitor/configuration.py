@@ -1,6 +1,7 @@
 from logging import getLogger
 from glob import glob
 from pathlib import Path
+import yaml
 
 
 logger = getLogger(__name__)
@@ -8,7 +9,12 @@ logger = getLogger(__name__)
 
 class Configuration:
 
-    def __init__(self, cfg):
+    def __init__(self, cfg_path):
+        if cfg_path:
+            logger.debug('Loading configuration from %s', cfg_path)
+            cfg = yaml.safe_load(Path(cfg_path).read_text())
+        else:
+            cfg = {}
         self.access_log_paths = []
         if cfg.get('access_logs'):
             self.access_log_paths.extend(cfg['access_logs'])

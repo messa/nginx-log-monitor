@@ -4,7 +4,6 @@ from asyncio import Queue, wait, FIRST_COMPLETED, CancelledError
 from logging import getLogger
 import os
 from pathlib import Path
-import yaml
 
 from .clients import OverwatchClient, SentryClient
 from .configuration import Configuration
@@ -29,13 +28,11 @@ def nginx_log_monitor_main():
     p.add_argument('--verbose', '-v', action='store_true')
     args = p.parse_args()
     setup_logging(verbose=args.verbose)
-    cfg_path = args.conf or os.environ.get('CONF_FILE')
-    cfg = yaml.safe_load(Path(cfg_path).read_text()) if cfg_path else {}
-    conf = Configuration(cfg)
+    conf = Configuration(cfg_path=args.conf or os.environ.get('CONF_FILE'))
     asyncio_run(async_main(conf))
 
 
-log_format = '%(asctime)s %(name)-25s %(levelname)5s: %(message)s'
+log_format = '%(asctime)s %(name)-30s %(levelname)5s: %(message)s'
 
 
 def setup_logging(verbose):
@@ -65,6 +62,7 @@ async def async_main(conf, overwatch_client=None, sentry_client=None):
             run_task(update_stats(access_log_pubsub.subscribe(), status_stats))
             run_task(update_stats(access_log_pubsub.subscribe(), path_stats))
             if conf.overwatch.enabled:
+                logger.debug('Starting Overwatch integration')
                 if not overwatch_client:
                     overwatch_client = OverwatchClient(
                         session,
@@ -72,6 +70,7 @@ async def async_main(conf, overwatch_client=None, sentry_client=None):
                         report_token=conf.overwatch.report_token)
                 run_task(report_to_overwatch(conf, status_stats, path_stats, overwatch_client=overwatch_client))
             if conf.sentry.enabled:
+                logger.debug('Starting Sentry integration')
                 run_task(report_to_sentry(
                     conf,
                     access_log_pubsub.subscribe(),
@@ -117,4 +116,4 @@ async def get_task_result(t):
     except CancelledError as e:
         logger.debug('Task %r cancelled', t)
     except Exception as e:
-        logger.debug('Task %r: %r', t, e)
+        logger.exception('Task %r: %r', t, e)

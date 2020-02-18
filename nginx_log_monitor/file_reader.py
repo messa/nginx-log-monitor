@@ -122,4 +122,6 @@ class FileReader:
             self._rotated_files.append((self._current_file, monotime() + self.expire_interval_s))
         self._current_file = f
         self._current_dev_inode = dev_inode
-        logger.debug('Opened file %s fd %s dev_inode %s', self._path, f.fileno(), dev_inode)
+        logger.debug(
+            'Opened file %s fd %s dev %s inode %s position %s',
+            self._path, f.fileno(), dev_inode[0], dev_inode[1], f.tell())
