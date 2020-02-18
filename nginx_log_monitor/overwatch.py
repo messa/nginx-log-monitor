@@ -15,7 +15,7 @@ logger = getLogger(__name__)
 async def report_to_overwatch(conf, status_stats, path_stats, overwatch_client):
     while True:
         await sleep(conf.overwatch.report_interval_s)
-        report = generate_report(status_stats, path_stats)
+        report = generate_report(conf, status_stats, path_stats)
         try:
             await overwatch_client.send_report(report)
         except OverwatchClientNotConfiguredError:
@@ -24,8 +24,8 @@ async def report_to_overwatch(conf, status_stats, path_stats, overwatch_client):
             logger.warning('Overwatch report failed: %r', e)
 
 
-def generate_report(status_stats, path_stats):
-    watchdog_interval_s = sleep_interval_s * 2 + 60
+def generate_report(conf, status_stats, path_stats):
+    watchdog_interval_s = conf.overwatch.report_interval_s * 2 + 60
     report = {
         'date': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
         'label': {
