@@ -17,11 +17,13 @@ class PathStats:
 
     def update(self, access_log_record, now=None):
         status = intern(str(access_log_record.status))
-        unified_path = unify_path(access_log_record.path)
+        path = unify_path(access_log_record.path)
+        if access_log_record.host:
+            path = access_log_record.host + path
         now = monotime() if now is None else now
-        self.total_path_status_count[status][unified_path] += 1
-        self.rolling_5min_path_status_count[status][unified_path] += 1
-        self.rolling_5min_deque.append((now, status, unified_path))
+        self.total_path_status_count[status][path] += 1
+        self.rolling_5min_path_status_count[status][path] += 1
+        self.rolling_5min_deque.append((now, status, path))
         self._roll(now)
         self._compact(status=status)
 

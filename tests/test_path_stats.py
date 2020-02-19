@@ -44,13 +44,15 @@ def test_path_stats_different_hosts():
         'path_status_count': {
             'total': {
                 '200': {
-                    '/foo': 3,
+                    'example.com/foo': 2,
+                    'example.net/foo': 1,
                     '/bar': 1,
                 },
             },
             'last_5_min': {
                 '200': {
-                    '/foo': 3,
+                    'example.com/foo': 2,
+                    'example.net/foo': 1,
                     '/bar': 1,
                 },
             },
