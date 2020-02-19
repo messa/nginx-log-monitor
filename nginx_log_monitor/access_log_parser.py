@@ -20,6 +20,10 @@ class InvalidLogLineError (Exception):
     pass
 
 
+class BogusLogLineError (InvalidLogLineError):
+    pass
+
+
 nginx_log_formats = [
     # the brackets are unnecessary here but they make this list more readable
     (
@@ -104,12 +108,19 @@ def parse_access_log_line(line):
     See tests/test_log_parsing.py.
     '''
     assert isinstance(line, str)
+    line = line.rstrip('\r\n')
     regexes = get_nginx_log_format_compiled_regexes()
     for regex in regexes:
         m = regex.match(line)
         #logger.debug('regex: %r line: %r -> %r', regex, line, m)
         if m:
             return AccessLogRecord(m.groupdict().get)
+    if ' 400 ' in line:
+        # 400 means even nginx did not understand the request
+        if 'Cookie: mstshash=Administr' in line:
+            raise BogusLogLineError('Bogus log line (probably RDP hacking): {!r}'.format(line))
+        if re.search(r' "(\\x[0-9a-f][0-9a-f]){3}', line):
+            raise BogusLogLineError('Bogus log line (binary data): {!r}'.format(line))
     raise InvalidLogLineError('Could not recognize log format: {!r}'.format(line))
 
 

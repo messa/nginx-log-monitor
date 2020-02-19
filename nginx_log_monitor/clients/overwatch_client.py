@@ -5,6 +5,8 @@ from reprlib import repr as smart_repr
 
 logger = getLogger(__name__)
 
+post_timeout_s = 30
+
 
 class OverwatchClientNotConfiguredError (Exception):
     pass
@@ -33,7 +35,7 @@ class OverwatchClient:
                 'Accept': 'application/json',
                 'Authorization': 'token ' + self._report_token,
             },
-            timeout=60)
+            timeout=post_timeout_s)
         logger.debug('Sending Overwatch report - POST %s with payload: %s', self._report_url, smart_repr(report_data))
         try:
             async with self._session.post(self._report_url, **post_kwargs) as resp:

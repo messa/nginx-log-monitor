@@ -8,7 +8,7 @@ from pathlib import Path
 from .clients import OverwatchClient, SentryClient
 from .configuration import Configuration
 from .file_reader import tail_files
-from .access_log_parser import parse_access_log_line
+from .access_log_parser import parse_access_log_line, BogusLogLineError, InvalidLogLineError
 from .util import asyncio_run, create_task, PubSub
 from .status_stats import StatusStats
 from .path_stats import PathStats
@@ -26,9 +26,13 @@ def nginx_log_monitor_main():
     p = ArgumentParser()
     p.add_argument('--conf', metavar='FILE', help='path to configuration file')
     p.add_argument('--verbose', '-v', action='store_true')
+    p.add_argument('--test-parse', action='store_true', help='only test parse the nginx log')
     args = p.parse_args()
     setup_logging(verbose=args.verbose)
     conf = Configuration(cfg_path=args.conf or os.environ.get('CONF_FILE'))
+    if args.test_parse:
+        test_parse(conf)
+        return
     asyncio_run(async_main(conf))
 
 
@@ -40,6 +44,22 @@ def setup_logging(verbose):
     basicConfig(
         format=log_format,
         level=DEBUG if verbose else WARNING)
+
+
+def test_parse(conf):
+    paths = conf.get_access_log_paths()
+    for p in paths:
+        logger.debug('Reading %s', p)
+        with p.open(mode='rb') as f:
+            for line in f:
+                line = line.decode()
+                try:
+                    access_log_record = parse_access_log_line(line)
+                except Exception as e:
+                    print('{}: {}'.format(e.__class__.__name__, str(e)))
+                else:
+                    logger.debug('line: %r -> %r', line, access_log_record)
+
 
 
 async def async_main(conf, overwatch_client=None, sentry_client=None):
@@ -87,8 +107,16 @@ async def async_main(conf, overwatch_client=None, sentry_client=None):
 async def process_log_line(access_log_pubsub, path, line):
     assert isinstance(line, bytes)
     line = line.decode()
-    access_log_record = parse_access_log_line(line)
-    await access_log_pubsub.put(access_log_record)
+    try:
+        access_log_record = parse_access_log_line(line)
+    except BogusLogLineError as e:
+        logger.debug('Failed to parse line: %s', e)
+    except InvalidLogLineError as e:
+        logger.info('Failed to parse line: %s', e)
+    except Exception as e:
+        logger.warning('Failed to parse line: %s', e)
+    else:
+        await access_log_pubsub.put(access_log_record)
 
 
 async def update_stats(access_log_queue, stats_obj):
