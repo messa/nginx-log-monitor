@@ -1,5 +1,4 @@
 from asyncio import Queue
-from inspect import iscoroutinefunction
 from weakref import WeakSet
 
 
@@ -8,7 +7,6 @@ def run_polyfill(f):
     Polyfill for asyncio.run() for Python < 3.7
     '''
     from asyncio import get_event_loop
-    assert iscoroutinefunction(f)
     loop = get_event_loop()
     loop.run_until_complete(f)
 
