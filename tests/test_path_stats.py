@@ -33,6 +33,31 @@ def test_path_stats():
     }
 
 
+def test_path_stats_different_hosts():
+    s = PathStats()
+    mk_rec = lambda data: AccessLogRecord(data.get)
+    s.update(mk_rec({'host': 'example.com', 'path': '/foo', 'status': 200}))
+    s.update(mk_rec({'host': 'example.net', 'path': '/foo', 'status': 200}))
+    s.update(mk_rec({'host': 'example.com', 'path': '/foo', 'status': 200}))
+    s.update(mk_rec({'path': '/bar', 'status': 200}))
+    assert s.get_report() == {
+        'path_status_count': {
+            'total': {
+                '200': {
+                    '/foo': 3,
+                    '/bar': 1,
+                },
+            },
+            'last_5_min': {
+                '200': {
+                    '/foo': 3,
+                    '/bar': 1,
+                },
+            },
+        },
+    }
+
+
 def test_path_stats_rolling():
     s = PathStats()
     mk_rec = lambda data: AccessLogRecord(data.get)
