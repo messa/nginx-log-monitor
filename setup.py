@@ -15,6 +15,7 @@ setup(
     install_requires=[
         'aiohttp',
         'pyyaml',
+        'pytz',
     ],
     entry_points={
         'console_scripts': [
