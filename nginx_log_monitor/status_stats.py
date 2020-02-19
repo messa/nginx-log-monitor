@@ -6,6 +6,8 @@ from time import monotonic as monotime
 
 logger = getLogger(__name__)
 
+basic_status_codes = '200 301 304 308 400 404 500 502 504'.split()
+
 
 class StatusStats:
 
@@ -13,6 +15,10 @@ class StatusStats:
         self.total_status_count = Counter()
         self.rolling_5min_status_count = Counter()
         self.rolling_5min_deque = deque()
+        for status in sorted(basic_status_codes):
+            status = intern(str(status))
+            self.total_status_count[status] = 0
+            self.rolling_5min_status_count[status] = 0
 
     def update(self, access_log_record, now=None):
         status = intern(str(access_log_record.status))
@@ -29,7 +35,6 @@ class StatusStats:
                 break
             self.rolling_5min_status_count[status] -= 1
             self.rolling_5min_deque.popleft()
-
 
     def get_report(self, now=None):
         now = monotime() if now is None else now
