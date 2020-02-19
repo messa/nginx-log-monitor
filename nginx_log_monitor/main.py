@@ -4,6 +4,12 @@ from asyncio import Queue, wait, FIRST_COMPLETED, CancelledError
 from logging import getLogger
 import os
 from pathlib import Path
+import sys
+
+try:
+    import sentry_sdk
+except ImportError:
+    sentry_sdk = None
 
 from .clients import OverwatchClient, SentryClient
 from .configuration import Configuration
@@ -33,7 +39,13 @@ def nginx_log_monitor_main():
     if args.test_parse:
         test_parse(conf)
         return
-    asyncio_run(async_main(conf))
+    if sentry_sdk and conf.sentry.dsn:
+        sentry_sdk.init(dsn=conf.sentry.dsn)
+    try:
+        asyncio_run(async_main(conf))
+    except Exception as e:
+        logger.exception('Nginx Log Monitor failed: %r', e)
+        sys.exit(repr(e))
 
 
 log_format = '%(asctime)s %(name)-30s %(levelname)5s: %(message)s'
