@@ -57,11 +57,11 @@ log_format_parts_to_regex = {
     '"$request"': r'"(?P<method>[A-Z]+) (?P<path>/[^ "]*) (?P<protocol>HTTP/[0-9.]+)"',
     '$status': r'(?P<status>[0-9]{3})',
     '$body_bytes_sent': r'(?P<body_bytes_sent>[0-9]+)',
-    '"$http_referer"': r'"(?P<referer>[^"]+)"',
+    '"$http_referer"': r'"(?P<referer>[^"]*)"',
     '"$http_user_agent"': r'"(?P<user_agent>[^"]+)"',
     '"$gzip_ratio"': r'"(?P<gzip_ratio>[0-9]+[,.][0-9]+)"',
     '$request_time': r'(?P<request_time>[0-9]+[,.][0-9]+)',
-    '$upstream_response_time': r'(?P<upstream_response_time>[0-9]+[,.][0-9]+)',
+    '$upstream_response_time': r'(?P<upstream_response_time>-|[0-9]+[,.][0-9]+)',
     '$pipe': r'(?P<pipe_flag>[.p])',
     '$host': r'(?P<host>[^ ]+)',
 }
@@ -164,12 +164,12 @@ class AccessLogRecord:
 
 
 def _int(v):
-    if v is None:
+    if v is None or v == '-':
         return None
     return int(v)
 
 def _float(v):
-    if v is None:
+    if v is None or v == '-':
         return None
     return float(v)
 

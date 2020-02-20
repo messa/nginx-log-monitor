@@ -21,6 +21,15 @@ def test_default_nginx_access_log():
     assert rec.user_agent_str == 'Mozilla/5.0 zgrab/0.x'
 
 
+def test_custom_nginx_access_log_20200220():
+    line = (
+        'example.com 1.23.45.67 - - [20/Feb/2020:11:15:26 +0100] '
+        '"GET /foo HTTP/1.1" 404 197 "-" "Mozilla/5.0 ..." 0.000 - .'
+    )
+    rec = parse_access_log_line(line)
+    assert rec.upstream_response_time is None
+
+
 def test_custom_nginx_access_log_20200204():
     line = (
         'foo.example.com 123.45.6.78 - - [04/Feb/2020:13:50:33 +0100] '
