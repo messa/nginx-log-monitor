@@ -1,4 +1,4 @@
-from collections import Counter, defaultdict, deque
+from collections import OrderedDict, Counter, defaultdict, deque
 from logging import getLogger
 import re
 from sys import intern
@@ -43,22 +43,20 @@ class PathStats:
     def get_report(self, now=None):
         now = monotime() if now is None else now
         self._roll(now)
-        report = {
-            'path_status_count': {
-                'total': {},
-                'last_5_min': {},
-            },
-        }
+        report = OrderedDict()
+        report['path_status_count'] = OrderedDict()
+        report['path_status_count']['total'] = OrderedDict()
+        report['path_status_count']['last_5_min'] = OrderedDict()
 
         for status, path_count in sorted(self.total_path_status_count.items()):
             assert status not in report['path_status_count']['total']
-            report['path_status_count']['total'][status] = {}
+            report['path_status_count']['total'][status] = OrderedDict()
             for path, count in path_count.most_common(5):
                 report['path_status_count']['total'][status][path] = count
 
         for status, path_count in sorted(self.rolling_5min_path_status_count.items()):
             assert status not in report['path_status_count']['last_5_min']
-            report['path_status_count']['last_5_min'][status] = {}
+            report['path_status_count']['last_5_min'][status] = OrderedDict()
             for path, count in path_count.most_common(5):
                 report['path_status_count']['last_5_min'][status][path] = count
 

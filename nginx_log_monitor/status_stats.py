@@ -1,4 +1,4 @@
-from collections import Counter, deque
+from collections import OrderedDict, Counter, deque
 from logging import getLogger
 from sys import intern
 from time import monotonic as monotime
@@ -39,12 +39,10 @@ class StatusStats:
     def get_report(self, now=None):
         now = monotime() if now is None else now
         self._roll(now)
-        report = {
-            'status_count': {
-                'total': {},
-                'last_5_min': {},
-            },
-        }
+        report = OrderedDict()
+        report['status_count'] = OrderedDict()
+        report['status_count']['total'] = OrderedDict()
+        report['status_count']['last_5_min'] = OrderedDict()
         for status, count in sorted(self.total_status_count.items()):
             report['status_count']['total'][status] = count
         for status, count in sorted(self.rolling_5min_status_count.items()):

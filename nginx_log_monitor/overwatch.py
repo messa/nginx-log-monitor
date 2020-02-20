@@ -1,4 +1,5 @@
 from asyncio import sleep
+from collections import OrderedDict
 from datetime import datetime
 from logging import getLogger
 import os
@@ -32,14 +33,13 @@ def generate_report(conf, status_stats, path_stats):
             'agent': 'nginx_log_monitor',
             'host': os.environ.get('LABEL_HOST') or getfqdn(),
         },
-        'state': {
-            'pid': getpid(),
-            'watchdog': {
-                '__watchdog': {
-                    'deadline': int((time() + watchdog_interval_s) * 1000),
-                },
-            },
-        }
+        'state': OrderedDict(),
+    }
+    report['state']['pid'] = getpid()
+    report['state']['watchdog'] = {
+        '__watchdog': {
+            'deadline': int((time() + watchdog_interval_s) * 1000),
+        },
     }
     report['state'].update(status_stats.get_report())
     report['state'].update(path_stats.get_report())

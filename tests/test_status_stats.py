@@ -38,6 +38,13 @@ def test_status_stats():
     }
 
 
+def test_status_stats_report_dict_is_ordered():
+    s = StatusStats()
+    report = s.get_report()
+    assert list(report['status_count']['total'].keys()) == ['200', '301', '304', '308', '400', '404', '500', '502', '504']
+    assert list(report['status_count']['last_5_min'].keys()) == ['200', '301', '304', '308', '400', '404', '500', '502', '504']
+
+
 def test_status_stats_rolling():
     s = StatusStats()
     mk_rec = lambda data: AccessLogRecord(data.get)
