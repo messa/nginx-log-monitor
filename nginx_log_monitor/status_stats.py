@@ -1,3 +1,4 @@
+from asyncio import Event
 from collections import OrderedDict, Counter, deque
 from logging import getLogger
 from sys import intern
@@ -15,6 +16,7 @@ class StatusStats:
         self.total_status_count = Counter()
         self.rolling_5min_status_count = Counter()
         self.rolling_5min_deque = deque()
+        self.have_5xx = Event()
         for status in sorted(basic_status_codes):
             status = intern(str(status))
             self.total_status_count[status] = 0
@@ -34,7 +36,12 @@ class StatusStats:
             if t >= now - 300:
                 break
             self.rolling_5min_status_count[status] -= 1
+            assert self.rolling_5min_status_count[status] >= 0
             self.rolling_5min_deque.popleft()
+        if any(self.rolling_5min_status_count[status] > 0 for status in '500 502 503 504'.split()):
+            self.have_5xx.set()
+        else:
+            self.have_5xx.reset()
 
     def get_report(self, now=None):
         now = monotime() if now is None else now
