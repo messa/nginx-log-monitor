@@ -45,7 +45,7 @@ class StatusStats:
         if any(self.rolling_5min_status_count[status] > 0 for status in server_error_status_codes):
             self.have_5xx.set()
         else:
-            self.have_5xx.reset()
+            self.have_5xx.clear()
 
     def get_report(self, now=None):
         now = monotime() if now is None else now
